@@ -17,12 +17,24 @@ Resolves #
 Link to Dev Doc or PR: 
 --->
 
+<!-- Uncomment this section if your pull request contains code changes and you have tested them against 1 or more InstructLab repositories
+**Integration Testing Evidence**
+- Link to pull request(s):
+  - link
+  - link
+
+- Links to passing CI job(s):
+  - link
+  - link
+--->
+
 **Checklist:**
 
 - [ ] **Commit Message Formatting**: Commit titles and messages follow guidelines in the [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#summary).
 - [ ] [Changelog](https://github.com/instructlab/ci-actions/blob/main/CHANGELOG.md) updated with breaking and/or notable changes for the next minor release.
 - [ ] Documentation has been added and/or updated, if applicable.
 - [ ] Unit tests have been added and/or updated. (If this is not applicable, please provide a justification.)
+- [ ] Integration testing has been performed, if applicable
 
 ## Description of this Change
 

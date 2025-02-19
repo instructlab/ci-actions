@@ -62,6 +62,10 @@ Improvements to existing functionality are tracked as [GitHub issues using the U
 
 ## Development
 
+### Prepare to Update or Add a New In-House Action
+
+In preparation for development, you will need to create a fork from this repository, as explained in the [How Can I Contribute?](#how-can-i-contribute) section. All development and testing will need to be done from your own fork, and the process for testing your changes will be explained later on in this section. However, it is important to first ensure that your dev environment is properly set up. Please review the next sub-section for details setting up your dev environment.
+
 ### Set up your dev environment
 
 GitHub actions should be written in either Bash or Python whenever possible. The following tools are required to develop in-house GitHub actions:
@@ -82,3 +86,87 @@ Install project requirements with:
 ```shell
 pip install -r requirements.txt
 ```
+
+### Update or Add a New Action
+
+All in-house GitHub actions are located under the [actions](../actions/) directory within this repository. Each action has its own dedicated subdirectory and does not share its resources with other actions. Therefore, if you plan to add a new in-house action or update an existing in-house action, that action should always reside under a unique subdirectory within the [actions](../actions/) directory.
+
+**It is important that each in-house action does not share its resources with other in-house actions, as that can introduce dependencies between actions and potentially result in unexpected behavior from one or more actions.**
+
+### Test your Changes
+
+When you want to update an existing, in-house action or want to create a new one, you should test those proposed changes before requesting a formal pull request review. By successfully testing your changes early on, repository and org maintainers throughout InstructLab will have confidence that your proposed changes behave/perform as intended.
+
+#### 1. Find an InstructLab Repository to Test with
+
+Whenever you plan to create or update an in-house action, you will already have some idea about which InstructLab repositories you want to consume that change. Therefore, you should create a fork of those specific InstructLab repositories and plan to test your proposed changes against them.
+
+#### 2. Create a Pull Request in your Desired "Test" Repositories
+
+Now that you've identified and forked specific InstructLab repositories you want to test against, your next step is to find the specific workflow file(s) that you want to test your action in. (Note: In each InstructLab repository that has CI checks, these workflow files are stored under the `.github` directory in the root of the repository.)
+
+Within those workflow file(s), you will need to instruct GitHub to:
+
+1. Checkout a specific in-house GitHub action *from your fork*.
+
+Example code snippet:
+
+```yaml
+# Give the step a useful name for context
+- name: Checkout in-house <SOME_ACTION_NAME> action
+  uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  with:
+    # Specify your fork here using the form of: {org}/{repo}
+    repository: your-org/ci-actions
+    # Clone the "ci-actions" repo to a local directory called "ci-actions", instead of
+    # overwriting the current dir contents
+    path: ci-actions
+    # If you created your changes in a branch other than `main`, provide the feature
+    # branch name so GitHub knows where to look for it. (`ref` defaults to `main`.)
+    ref: your-feature-branch
+    # The `instructlab/ci-actions` repository contains a lot of files, most of which
+    # likely do not pertain to your action. This tells GitHub to checkout your action
+    # only.
+    sparse-checkout: |
+    actions/SOME_ACTION_NAME
+```
+
+2. Call your custom GitHub action.
+
+Example code snippet:
+
+```yaml
+- name: <SOME_ACTION_NAME>
+  # The "uses" parameter tells GitHub where to find your CI action. Since, in the previous
+  # step, you told GitHub to clone your changes and store them in the `./ci-actions`
+  # directory, you will need to tell GitHub which path under `./ci-actions` contains the
+  # GitHub action you want to run.
+  uses: ./ci-actions/actions/SOME_ACTION_NAME
+```
+
+Putting it all together in a sample job:
+
+```yaml
+# This job launches an EC2 instance in AWS to run some unit tests
+jobs:
+  start-ec2-runner:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout "free-disk-space" in-house CI action
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # "free-disk-space" was added as branch within this "ci-actions" repo, but it
+          # also could have been added through a fork instead. Either method will work.
+          # We just need to reference the actual repository and actual branch that contains
+          # those changes.
+          repository: instructlab/ci-actions
+          path: ci-actions
+          ref: free-disk-space
+          sparse-checkout: |
+            actions/free-disk-space
+
+      - name: Free disk space
+        uses: ./ci-actions/actions/free-disk-space
+```
+
+When you want to run your changes, you should reach out to a maintainer to ask them to manually trigger your changes for you. After your tests pass, provide a link to your pull request alongside the job logs.
