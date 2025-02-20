@@ -9,9 +9,12 @@ on:
       - "release-**"
     paths:
       - '**.py'
+      - '**.yml'
+      - '**.yaml'
       - 'requirements**.txt'
       - 'tox.ini'
       - .pylintrc
+      - 'actions/**' # Any time an action is updated or added
       - '.github/workflows/**' # All workflows, including this one
   pull_request:
     branches:
@@ -19,9 +22,12 @@ on:
       - "release-**"
     paths:
       - '**.py'
+      - '**.yml'
+      - '**.yaml'
       - 'requirements**.txt'
       - 'tox.ini'
       - .pylintrc
+      - 'actions/**' # Any time an action is updated or added
       - '.github/workflows/**' # All workflows, including this one
 
 env:
