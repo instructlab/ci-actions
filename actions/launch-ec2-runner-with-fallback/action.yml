@@ -1,0 +1,650 @@
+# SPDX-License-Identifier: Apache-2.0
+
+name: "Launch EC2 Runner with Fallback"
+description: "Launches an EC2 instance in AWS, incorporating fallback logic if the desired AZ or region has insufficient instance capacity."
+author: "InstructLab"
+inputs:
+  ##########################
+  #   AWS authentication   #
+  ##########################
+  aws_access_key_id:
+    required: true
+    description: >-
+      AWS access key ID that will be used to launch your desired instance.
+  aws_secret_access_key:
+    required: true
+    description: >-
+      AWS secret access key that will be used to launch your desired instance.
+  github_token:
+    required: true
+    description: >-
+      GitHub Personal Access Token with the `repo` scope assigned.
+
+  ##############################
+  #  Region launching configs  #
+  ##############################
+  regions_config:
+    required: true
+    description: >-
+      A JSON string that defines which regions and subnets to try, along with the AMIs and security groups to use within those regions.
+
+    # # EXAMPLE INPUT STRING FOR `regions_config`:
+    # [
+    #   {
+    #     "region": "us-east-1",
+    #     "subnets": {
+    #       "us-east-1a": "${{ secrets.SUBNET_US_EAST_1A }}",
+    #       "us-east-1b": "${{ secrets.SUBNET_US_EAST_1B }}",
+    #       "us-east-1c": "${{ secrets.SUBNET_US_EAST_1C }}",
+    #     },
+    #     "ec2-ami": "${{ secrets.EC2_AMI_US_EAST_1 }}",
+    #     "security-group-id": "${{ secrets.SECURITY_GROUP_ID_US_EAST_1 }}",
+    #   },
+    #   {
+    #     "region": "us-east-2",
+    #     "subnets": {
+    #       "us-east-2a": "${{ secrets.SUBNET_US_EAST_2A }}",
+    #       "us-east-2b": "${{ secrets.SUBNET_US_EAST_2B }}",
+    #       "us-east-2c": "${{ secrets.SUBNET_US_EAST_2C }}",
+    #       "us-east-2d": "${{ secrets.SUBNET_US_EAST_2D }}",
+    #       "us-east-2e": "${{ secrets.SUBNET_US_EAST_2E }}",
+    #     }
+    #     "ec2-ami": "${{ secrets.EC2_AMI_US_EAST_2 }}",
+    #     "security-group-id": "${{ secrets.SECURITY_GROUP_ID_US_EAST_2 }}",
+    #   },
+    # ]
+
+  ########################################################
+  #  Generic AWS instance configs, regardless of region  #
+  ########################################################
+  ec2_instance_type:
+    required: true
+    description: >-
+      The desired AWS instance type to use, regardless of region. (Note that some instance types are not available in certain regions.)
+  aws_resource_tags:
+    required: true  # We should require resource tags for resource management purposes, even though AWS sees them as optional
+    description: >-
+      Resource tags to apply to the desired AWS instance, upon successful launch.
+  try_spot_instance_first:
+    required: false
+    description: >-
+      If set to "true", then the EC2 instance will be launched as a spot instance rather than a dedicated EC2 instance. If a spot
+      instance cannot be launched in any of the desired availability zones (e.g., due to insufficient capacity on AWS), then a
+      dedicated instance will be tried next. (Note: This option is not always desirable for certain instance types.)
+
+# Contains the necessary metadata to stop an EC2 instance
+outputs:
+  label:
+    value: ${{ steps.selected-availability-zone.outputs.label }}
+    description: The EC2 availability zone that the instance successfully launched under
+  ec2-instance-id:
+    value: ${{ steps.selected-availability-zone.outputs.ec2-instance-id }}
+    description: The instance ID associated with the successfully-launched EC2 instance
+  ec2-instance-region:
+    value: ${{ steps.selected-availability-zone.outputs.ec2-instance-region}}
+    description: The region where the EC2 instance was launched
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        # https://github.com/actions/checkout/issues/249
+        fetch-depth: 0
+        # Must set 'path' due to a bug with actions/checkout
+        path: "pull-request-changes"
+
+    ####################################
+    # Preload configs to env           #
+    ####################################
+    - name: "Read and load configs"
+      id: load-configs
+      run: |
+        # shellcheck disable=SC2086
+        # Save `regions_config` input to a file readable by the CLI tool.
+        echo '${{ inputs.regions_config }}' >> ${REGIONS_TMP}
+
+        # We need to reference this action's bash scripts to obtain configs
+        cd ${{ github.action_path }}/scripts
+
+        ################# LOAD 'us-east-2a' CONFIGS #################
+        availability_zone="us-east-2a"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_2A_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2A_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2A_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-2a' confgs"
+
+        ################# LOAD 'us-east-2b' CONFIGS #################
+        availability_zone="us-east-2b"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_2B_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2B_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2B_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-2b' confgs"
+
+        ################# LOAD 'us-east-2c' CONFIGS #################
+        availability_zone="us-east-2c"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_2C_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2C_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_2C_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-2c' confgs"
+
+        ################# LOAD 'us-east-1a' CONFIGS #################
+        availability_zone="us-east-1a"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1A_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1A_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1A_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1a' confgs"
+
+        ################# LOAD 'us-east-1b' CONFIGS #################
+        availability_zone="us-east-1b"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1B_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1B_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1B_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1b' confgs"
+
+        ################# LOAD 'us-east-1c' CONFIGS #################
+        availability_zone="us-east-1c"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1C_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1C_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1C_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1c' confgs"
+
+        ################# LOAD 'us-east-1d' CONFIGS #################
+        availability_zone="us-east-1d"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1D_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1D_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1D_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1d' confgs"
+
+        ################# LOAD 'us-east-1e' CONFIGS #################
+        availability_zone="us-east-1e"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1E_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1E_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1E_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1e' confgs"
+
+        ################# LOAD 'us-east-1f' CONFIGS #################
+        availability_zone="us-east-1f"
+        subnet_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "subnet")
+        ec2_ami=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "ec2-ami")
+        security_group_id=$(./get_config_value.sh -c "${REGIONS_TMP}" -l "${{ env.LOG_LEVEL }}" -z "${availability_zone}" -v "security-group-id")
+        echo "US_EAST_1F_SUBNET_ID=${subnet_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1F_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
+        echo "US_EAST_1F_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
+
+        echo "Loaded 'us-east-1f' confgs"
+
+        # Cleanup
+        rm -rf ${REGIONS_TMP}
+      shell: bash
+      env:
+        LOG_LEVEL: "ERROR"
+        REGIONS_TMP: "/tmp/regions-test.txt"
+
+    ####################################
+    # Spot Instance Launching Attempts #
+    ####################################
+    # 1.) Try us-east-2a first
+    - name: "[ SPOT INSTANCE ] Configure AWS credentials for us-east-2"
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: "us-east-2"
+
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-2a"
+      if: inputs.try_spot_instance_first == 'true' || inputs.try_spot_instance_first == 'True'
+      id: start-ec2-spot-runner-us-east-2a
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2A_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2A_SUBNET_ID }}
+        security-group-id: "${{ steps.load-configs.outputs.US_EAST_2A_SECURITY_GROUP_ID }}"
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 2.) Try us-east-2b next
+    # (NOTE: We don't need to check if "try_spot_instance_first" is true or false. If the us-east-2a spot instance attempt
+    # wasn't triggered, then it's impossible for: ".outcome == failure". The ".outcome" variable will be empty in that case.)
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-2b"
+      if: steps.start-ec2-spot-runner-us-east-2a.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-2b
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2B_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2B_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_2B_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 3.) Try us-east-2c next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-2c"
+      if: steps.start-ec2-spot-runner-us-east-2b.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-2c
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2C_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2C_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_2C_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 4.) Try us-east-1a next
+    - name: "[ SPOT INSTANCE ] Configure AWS credentials for us-east-1"
+      if: steps.start-ec2-spot-runner-us-east-2c.outcome == 'failure'
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: "us-east-1"
+
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1a"
+      if: steps.start-ec2-spot-runner-us-east-2c.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1a
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1A_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1A_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1A_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 5.) Try us-east-1b next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1b (if no availability still)"
+      if: steps.start-ec2-spot-runner-us-east-1a.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1b
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1B_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1B_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1B_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 6.) Try us-east-1c next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1c (if no availability still)"
+      if: steps.start-ec2-spot-runner-us-east-1b.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1c
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1C_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1C_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1C_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 7.) Try us-east-1d next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1d (if no availability still)"
+      if: steps.start-ec2-spot-runner-us-east-1c.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1d
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1D_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1D_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1D_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 8.) Try us-east-1e next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1e (if no availability still)"
+      if: steps.start-ec2-spot-runner-us-east-1d.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1e
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1E_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1E_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1E_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 9.) Try us-east-1f next
+    - name: "[ SPOT INSTANCE ] Attempt to start EC2 runner as a SPOT instance on us-east-1e (if no availability still)"
+      if: steps.start-ec2-spot-runner-us-east-1e.outcome == 'failure'
+      id: start-ec2-spot-runner-us-east-1f
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        mode: start
+        market-type: spot # Define spot instance here
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1F_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1F_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1F_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    #########################################
+    # Dedicated Instance Launching Attempts #
+    #########################################
+    # If the spot instance attempts failed OR a dedicated instance is preferred...
+
+    # 1.) Try us-east-2a first
+    - name: "[ DEDICATED INSTANCE ] Configure AWS credentials for us-east-2"
+      if: steps.start-ec2-spot-runner-us-east-1f.outcome == 'failure' || ( inputs.try_spot_instance_first != 'true' && inputs.try_spot_instance_first != 'True' )
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: "us-east-2"
+  
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-2a"
+      if: steps.start-ec2-spot-runner-us-east-1f.outcome == 'failure' || ( inputs.try_spot_instance_first != 'true' && inputs.try_spot_instance_first != 'True' )
+      id: start-ec2-dedicated-runner-us-east-2a
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2A_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2A_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_2A_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 2.) Try us-east-2b next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-2b"
+      if: steps.start-ec2-dedicated-runner-us-east-2a.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-2b
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2B_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2B_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_2B_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 3.) Try us-east-2c next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-2c"
+      if: steps.start-ec2-dedicated-runner-us-east-2b.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-2c
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_2C_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_2C_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_2C_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 4.) Try us-east-1a next
+    - name: "[ SPOT INSTANCE ] Configure AWS credentials for us-east-1"
+      if: steps.start-ec2-dedicated-runner-us-east-2c.outcome == 'failure'
+      uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-region: "us-east-1"
+
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1a"
+      if: steps.start-ec2-dedicated-runner-us-east-2c.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1a
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1A_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1A_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1A_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 5.) Try us-east-1b next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1b (if no availability still)"
+      if: steps.start-ec2-dedicated-runner-us-east-1a.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1b
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1B_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1B_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1B_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 6.) Try us-east-1c next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1c (if no availability still)"
+      if: steps.start-ec2-dedicated-runner-us-east-1b.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1c
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1C_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1C_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1C_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 7.) Try us-east-1d next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1d (if no availability still)"
+      if: steps.start-ec2-dedicated-runner-us-east-1c.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1d
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1D_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1D_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1D_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 8.) Try us-east-1e next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1e (if no availability still)"
+      if: steps.start-ec2-dedicated-runner-us-east-1d.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1e
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1E_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1E_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1E_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # 9.) Try us-east-1f next
+    - name: "[ DEDICATED INSTANCE ] Attempt to start EC2 runner as a DEDICATED instance on us-east-1e (if no availability still)"
+      if: steps.start-ec2-dedicated-runner-us-east-1e.outcome == 'failure'
+      id: start-ec2-dedicated-runner-us-east-1f
+      uses: machulav/ec2-github-runner@28fbe1c4d7d9ba74134ca5ebc559d5b0a989a856 # v2.3.8
+      continue-on-error: true
+      with:
+        # NOTE: 'market-type' purposefully is not set!
+        mode: start
+        github-token: ${{ inputs.github_token }}
+        ec2-image-id: ${{ steps.load-configs.outputs.US_EAST_1F_AWS_EC2_AMI }}
+        ec2-instance-type: ${{ inputs.ec2_instance_type }}
+        subnet-id: ${{ steps.load-configs.outputs.US_EAST_1F_SUBNET_ID }}
+        security-group-id: ${{ steps.load-configs.outputs.US_EAST_1F_SECURITY_GROUP_ID }}
+        iam-role-name: instructlab-ci-runner
+        aws-resource-tags: ${{ inputs.aws_resource_tags }}
+
+    # Output the EC2 runner label and instance ID to the 'selected-availability-zone' ID output for reference later.
+    - name: Determine EC2 availability zone used
+      id: selected-availability-zone
+      shell: bash
+      run: |
+        # shellcheck disable=SC2086 # False positive error from shellcheck about word splitting/gobbling
+
+        # Clear $GITHUB_OUTPUT in case of code failure
+        echo "SUBNET_ID=''" >> "$GITHUB_OUTPUT"
+        echo "SECURITY_GROUP_ID=''" >> "$GITHUB_OUTPUT"
+        echo "AWS_EC2_AMI=''" >> "$GITHUB_OUTPUT"
+
+        ######## SPOT RUNNERS #########
+        if [ "${{ steps.start-ec2-spot-runner-us-east-2a.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-2a.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-2a.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-2b.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-2b.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-2b.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-2c.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-2c.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-2c.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1a.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1a.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1a.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1b.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1b.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1b.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1c.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1c.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1c.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1d.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1d.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1d.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1e.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1e.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1e.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-spot-runner-us-east-1f.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-spot-runner-us-east-1f.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-spot-runner-us-east-1f.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        ######## DEDICATED RUNNERS #########
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-2a.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-2a.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-2a.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-2b.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-2b.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-2b.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-2c.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-2c.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-2c.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-2" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1a.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1a.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1a.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1b.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1b.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1b.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1c.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1c.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1c.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1d.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1d.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1d.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1e.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1e.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1e.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        elif [ "${{ steps.start-ec2-dedicated-runner-us-east-1f.outcome }}" = "success" ]; then
+          echo "label=${{ steps.start-ec2-dedicated-runner-us-east-1f.outputs.label }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-id=${{ steps.start-ec2-dedicated-runner-us-east-1f.outputs.ec2-instance-id }}" >> $GITHUB_OUTPUT
+          echo "ec2-instance-region=us-east-1" >> $GITHUB_OUTPUT
+        fi
