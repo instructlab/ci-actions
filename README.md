@@ -16,6 +16,7 @@ Below is a list of the in-house GitHub actions stored in this repository:
 | Name | Description | Example Use Cases |
 | --- | --- | --- |
 | [free-disk-space](./actions/free-disk-space/free-disk-space.md) | Used to reclaim disk space on either a GitHub or EC2 runner. | <ul><li>If a CI job tends to fail due to "insufficient disk space"</li><li>If you want to reduce cloud costs by reclaiming disk space instead of increasing your writeable cloud storage to compensate for a bloated EC2 image</li></ul> |
+| [launch-ec2-runner-with-fallback](./actions/launch-ec2-runner-with-fallback/launch-ec2-runner-with-fallback.md) | Used launch an EC2 instance in AWS, either as a spot instance or a dedicated instance. If your preferred availability zone lacks availability for your instance type, "backup" availability zones will be tried. | <ul><li>Insufficient capacity in AWS (i.e., AWS lacks availablility for your desired EC2 instance type in your preferred availability zone)</li><li>Cost savings (i.e., You want to try launching your EC2 runner as a spot instance first)</li></ul> |
 
 ## How to Use One or More In-House GitHub Actions
 

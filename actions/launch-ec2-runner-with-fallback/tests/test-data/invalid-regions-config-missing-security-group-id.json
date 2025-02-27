@@ -1,0 +1,20 @@
+[
+    {
+        "region": "us-east-2",
+        "subnets": {
+            "us-east-2a": "subnet-a",
+            "us-east-2b": "subnet-b",
+            "us-east-2c": "subnet-c"
+        },
+        "ec2-ami": "ami-01234567890"
+    },
+    {
+        "region": "us-east-1",
+        "subnets": {
+            "us-east-1a": "subnet-a1",
+            "us-east-1b": "subnet-a2",
+            "us-east-1c": "subnet-a3"
+        },
+        "ec2-ami": "ami-0987654321"
+    }
+]
