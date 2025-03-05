@@ -1,0 +1,20 @@
+[
+    {
+        "region": "us-east-2",
+        "subnets": {
+            "us-east-2a": "subnet-a",
+            "us-east-2b": "subnet-b",
+            "us-east-2c": "subnet-c"
+        },
+        "security-group-id": "sg-0"
+    },
+    {
+        "region": "us-east-1",
+        "subnets": {
+            "us-east-1a": "subnet-a1",
+            "us-east-1b": "subnet-a2",
+            "us-east-1c": "subnet-a3"
+        },
+        "security-group-id": "sg-1"
+    }
+]

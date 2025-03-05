@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: Apache-2.0
+# yamllint disable rule:line-length
+
+name: Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+      - "release-**"
+    paths:
+      - '**.py'
+      - 'requirements**.txt'
+      - 'tox.ini'
+      - 'actions/**.sh'
+      - '.github/workflows/test.yml' # This workflow
+  pull_request:
+    branches:
+      - "main"
+      - "release-**"
+    paths:
+      - '**.py'
+      - 'requirements**.txt'
+      - 'tox.ini'
+      - 'actions/**.sh'
+      - '.github/workflows/test.yml' # This workflow
+
+env:
+  LC_ALL: en_US.UTF-8
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  test-workflow-ready:
+    permissions:
+      checks: read
+    uses: ./.github/workflows/status-checks.yml
+    with:
+      # The unit and functional tests will not start until the following job IDs have succeeded
+      job_ids: >- # Space-separated job ids to wait on for status checks
+        DCO
+        shellcheck
+        lint-workflow-complete
+
+  test:
+    # Start name with 'test:' for test-workflow-complete job_ids
+    name: "test: ${{ matrix.python }} on ${{ matrix.platform }}"
+    needs: ["test-workflow-ready"]
+    runs-on: "${{ matrix.platform }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        python:
+          - "3.10"
+          - "3.11"
+        platform:
+          - "ubuntu-latest"
+        include:
+          - python: "3.11"
+            platform: "macos-latest"
+    steps:
+      - name: "Harden Runner"
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit # TODO: change to 'egress-policy: block' after couple of runs
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # https://github.com/actions/checkout/issues/249
+          fetch-depth: 0
+
+      # Always apt-get update before installing any extra packages
+      # https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/customizing-github-hosted-runners#installing-software-on-ubuntu-runners
+      - name: Update apt index
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          sudo apt-get update
+
+      - name: Install tools on MacOS
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          brew install expect coreutils bash skopeo
+
+      - name: Setup Python ${{ matrix.python }}
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ matrix.python }}
+          ## TODO: Uncomment once this change merges into `main`. We can't use caching until it's merged.
+          # cache: pip
+          # cache-dependency-path: |
+          #   **/requirements*.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install tox tox-gh>=1.2
+
+      - name: Run Bash "unit" tests with tox on MacOS
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          tox -e launch-ec2-runner-with-fallback
+
+      # Default shell on Ubuntu is 'dash', so we need to override the default shell
+      - name: Run Bash "unit" tests with tox on Linux
+        if: startsWith(matrix.platform, 'ubuntu')
+        run: |
+          # Forcefully overwrite the symlink from `/bin/sh -> /bin/dash` to: `/bin/sh -> /bin/bash`.
+          sudo ln -sf /bin/bash /bin/sh
+          tox -e launch-ec2-runner-with-fallback
+        shell: bash
+
+  test-workflow-complete:
+    permissions:
+      checks: read
+    uses: ./.github/workflows/status-checks.yml
+    with:
+      job_ids: >- # Space-separated job ids to wait on for status checks
+        test-workflow-ready
+        test:
