@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+
+name: 'Detect Exposed Secrets'
+description: 'Detects exposed secrets in the repository'
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        # https://github.com/actions/checkout/issues/249
+        fetch-depth: 0
+        # Must set 'path' due to a bug with actions/checkout
+        path: "pull-request-changes"
+
+    - name: Check for exposed secrets in workflow files
+      run: |
+         cd ${{ github.action_path }}/exposed_secrets_detection
+         python3 -m src.main --dir "${GITHUB_WORKSPACE}/pull-request-changes/.github/workflows"
+      shell: bash

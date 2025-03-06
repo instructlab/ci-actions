@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# yamllint disable rule:line-length
+
+name: "Fake E2E Job"
+
+on:
+  workflow_dispatch:
+    inputs:
+      some_input:
+        description: 'Some input'
+        required: true
+      some_other_input:
+        description: 'some other input'
+        required: false
+
+jobs:
+  fake-e2e-test:
+    needs:
+      - start-fake-ec2-runner
+    runs-on: ${{ needs.start-fake-ec2-runner.outputs.label }}
+
+    steps:
+      - name: Run e2e test
+        env:
+          SECRET_TOKEN: ${{ secrets.SECRET_TOKEN }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        run: |
+          sh some_script.sh
