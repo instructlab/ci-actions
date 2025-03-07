@@ -102,6 +102,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tox tox-gh>=1.2
 
+      - name: Run Python unit tests for each GH action
+        run: |
+          tox -e detect-exposed-workflow-secrets
+
       - name: Run Bash "unit" tests with tox on MacOS
         if: startsWith(matrix.platform, 'macos')
         run: |

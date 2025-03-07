@@ -52,17 +52,15 @@ jobs:
           - name: "ruff"
             commands: |
               tox -e ruff
-          ## TODO: Uncomment `pylint` once the first in-house, Python-based action is merged
-          # - name: "pylint"
-          #   commands: |
-          #     echo "::add-matcher::.github/workflows/matchers/pylint.json"
-          #     tox -e fastlint
-          #     tox -e lint
-          ## TODO: Uncomment `mypy` once the first in-house, Python-based action is merged
-          # - name: "mypy"
-          #   commands: |
-          #     echo "::add-matcher::.github/workflows/matchers/mypy.json"
-          #     tox -e mypy
+          - name: "pylint"
+            commands: |
+              echo "::add-matcher::.github/workflows/matchers/pylint.json"
+              tox -e fastlint
+              tox -e lint
+          - name: "mypy"
+            commands: |
+              echo "::add-matcher::.github/workflows/matchers/mypy.json"
+              tox -e mypy
           - name: "yamllint"
             commands: |
               tox -e yamllint
