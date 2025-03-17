@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# yamllint disable rule:line-length
+
+name: "Fake E2E Job with Missing Job Triggers"
+
+# TRIGGERS ARE INTENTIONALLY MISSING
+
+jobs:
+  fake-e2e-test:
+    needs:
+      - start-fake-ec2-runner
+    runs-on: ${{ needs.start-fake-ec2-runner.outputs.label }}
+
+    steps:
+      - name: Run e2e test
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          sh some_script.sh

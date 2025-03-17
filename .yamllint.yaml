@@ -12,3 +12,9 @@ rules:
     ignore:
       # REASON: This file needs lines that are longer than 120 in order to load variables to the env
       - /actions/launch-ec2-runner-with-fallback/action.yml
+
+# SKIP running yamllint on these files entirely. Please provide clear, concise reasons.
+ignore:
+    # REASON: This file contains intentionally malformed YAML for testing purposes within the
+    # 'detect-exposed-workflow-secrets' action
+    - /actions/detect-exposed-workflow-secrets/exposed_secrets_detection/tests/test_data/git_workflow_invalid_yaml.yml
