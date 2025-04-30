@@ -67,6 +67,17 @@ def test_run_validation_workflow_directory_exists_but_one_file_has_a_yaml_parsin
         run_validation(args)
 
 
+def test_run_validation_workflow_directory():
+    args = {
+        "dir": "tests/test_data/dummy_dir",
+    }
+    with pytest.raises(
+        ExposedSecretsError,
+        match=r"Detected one or more exposed secrets.*Findings:.*'job_name': 'fake-e2e-test'.*secrets.SECRET_TOKEN.*secrets.SECRET_KEY.*",
+    ):
+        run_validation(args)
+
+
 def test_run_validation_workflow_but_yaml_is_not_a_workflow():
     args = {
         "file": "tests/test_data/random_yaml_file.yml",
