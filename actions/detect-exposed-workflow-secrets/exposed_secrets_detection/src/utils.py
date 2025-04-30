@@ -95,7 +95,6 @@ def workflow_auto_triggers_on_pull_request(trigger_conditions: list) -> bool:
         "pull_request_comment",  # this is deprecated and replaced by "issue_comment", but GitHub still allows it to be used
         "pull_request_review",
         "pull_request_review_comment",
-        "pull_request_target",
     }
 
     # If even one of the above triggers is found in the given workflow file, then we must review the
