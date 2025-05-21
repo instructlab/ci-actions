@@ -117,7 +117,7 @@ runs:
         echo "US_EAST_2A_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_2A_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-2a' confgs"
+        echo "Loaded 'us-east-2a' configs"
 
         ################# LOAD 'us-east-2b' CONFIGS #################
         availability_zone="us-east-2b"
@@ -128,7 +128,7 @@ runs:
         echo "US_EAST_2B_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_2B_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-2b' confgs"
+        echo "Loaded 'us-east-2b' configs"
 
         ################# LOAD 'us-east-2c' CONFIGS #################
         availability_zone="us-east-2c"
@@ -139,7 +139,7 @@ runs:
         echo "US_EAST_2C_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_2C_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-2c' confgs"
+        echo "Loaded 'us-east-2c' configs"
 
         ################# LOAD 'us-east-1a' CONFIGS #################
         availability_zone="us-east-1a"
@@ -150,7 +150,7 @@ runs:
         echo "US_EAST_1A_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1A_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1a' confgs"
+        echo "Loaded 'us-east-1a' configs"
 
         ################# LOAD 'us-east-1b' CONFIGS #################
         availability_zone="us-east-1b"
@@ -161,7 +161,7 @@ runs:
         echo "US_EAST_1B_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1B_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1b' confgs"
+        echo "Loaded 'us-east-1b' configs"
 
         ################# LOAD 'us-east-1c' CONFIGS #################
         availability_zone="us-east-1c"
@@ -172,7 +172,7 @@ runs:
         echo "US_EAST_1C_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1C_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1c' confgs"
+        echo "Loaded 'us-east-1c' configs"
 
         ################# LOAD 'us-east-1d' CONFIGS #################
         availability_zone="us-east-1d"
@@ -183,7 +183,7 @@ runs:
         echo "US_EAST_1D_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1D_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1d' confgs"
+        echo "Loaded 'us-east-1d' configs"
 
         ################# LOAD 'us-east-1e' CONFIGS #################
         availability_zone="us-east-1e"
@@ -194,7 +194,7 @@ runs:
         echo "US_EAST_1E_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1E_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1e' confgs"
+        echo "Loaded 'us-east-1e' configs"
 
         ################# LOAD 'us-east-1f' CONFIGS #################
         availability_zone="us-east-1f"
@@ -205,7 +205,7 @@ runs:
         echo "US_EAST_1F_SECURITY_GROUP_ID=${security_group_id}" >> "$GITHUB_OUTPUT"
         echo "US_EAST_1F_AWS_EC2_AMI=${ec2_ami}" >> "$GITHUB_OUTPUT"
 
-        echo "Loaded 'us-east-1f' confgs"
+        echo "Loaded 'us-east-1f' configs"
 
         # Cleanup
         rm -rf ${REGIONS_TMP}
