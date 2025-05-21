@@ -561,8 +561,10 @@ runs:
         iam-role-name: instructlab-ci-runner
         aws-resource-tags: ${{ inputs.aws_resource_tags }}
 
-    # Output the EC2 runner label and instance ID to the 'selected-availability-zone' ID output for reference later.
+    # Output the EC2 runner label and instance ID to the 'selected-availability-zone' ID output for reference later. Note
+    # that we always want to run this job to cleanup instances in AWS in case the instance launching gets aborted prematurely.
     - name: Determine EC2 availability zone used
+      if: ${{ always() }}
       id: selected-availability-zone
       shell: bash
       run: |
