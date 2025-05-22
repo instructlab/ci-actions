@@ -12,7 +12,7 @@ import os
 import sys
 
 # Third Party
-import nbformat
+import nbformat  # type: ignore[import-not-found]
 
 
 def validate_notebook(file_path) -> bool:
