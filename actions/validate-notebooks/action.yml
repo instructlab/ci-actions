@@ -1,0 +1,19 @@
+name: 'Validate Notebooks'
+description: 'Validates Jupyter Notebook Files'
+author: "InstructLab"
+
+inputs:
+  path:
+    description: a path to a file or directory containing jupyter notebook files; accepts multiple arguments
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Dependencies
+      shell: bash
+      run: pip install nbformat
+    - name: Validate Notebooks
+      shell: bash
+      run: python ${{ github.action_path }}/validate.py $notebook_paths ${{ inputs.path }}
