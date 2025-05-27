@@ -16,4 +16,4 @@ runs:
       run: pip install nbformat
     - name: Validate Notebooks
       shell: bash
-      run: python ${{ github.action_path }}/validate.py $notebook_paths ${{ inputs.path }}
+      run: python ${{ github.action_path }}/validate.py ${{ inputs.path }}
