@@ -28,5 +28,5 @@ jobs:
       - name: Validate Jupyter Notebooks
         uses: ./ci-actions/actions/validate-notebooks
         with:
-          notebook_paths: "notebooks/"
+          path: "notebooks/"
 ```
