@@ -62,8 +62,7 @@ jobs:
         with:
           repository: instructlab/ci-actions
           path: ci-actions
-          # TODO: update with a tag when the action is released?
-          ref: main
+          ref: v0.2.0
           sparse-checkout: |
             actions/update-constraints
 
