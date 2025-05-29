@@ -31,6 +31,17 @@ commands = {posargs}
 allowlist_externals = *
 ```
 
+Each project should also list all input requirements files in the
+`requirements-files.in` file, one file name per line.
+
+For example, the `requirements-files.in` file may look like this:
+
+```
+requirements.txt
+requirements-dev.txt
+docs/requirements.txt
+```
+
 ## How to Call this Action
 
 The action is meant to be executed from a separate workflow file. It's advised
@@ -62,8 +73,7 @@ jobs:
         with:
           repository: instructlab/ci-actions
           path: ci-actions
-          # TODO: update with a tag when the action is released?
-          ref: main
+          ref: v0.2.0
           sparse-checkout: |
             actions/update-constraints
 
