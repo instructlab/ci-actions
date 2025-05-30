@@ -16,12 +16,11 @@ REQUIREMENTS_FILES=$(grep -v '^#' requirements-files.in | tr '\n' ' ')
 CONSTRAINTS_FILE=constraints-dev.txt
 
 # shellcheck disable=SC2086
-pip-compile -U \
+uv pip compile -U \
     --no-header \
     --annotate \
     --annotation-style line \
     --allow-unsafe \
-    --strip-extras \
     --output-file=$CONSTRAINTS_FILE \
     --constraint constraints-dev.txt.in \
     $REQUIREMENTS_FILES
