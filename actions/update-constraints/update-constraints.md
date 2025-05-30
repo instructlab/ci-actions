@@ -13,9 +13,9 @@ for InstructLab CI.
 ## Requirements
 
 The project should define a new `constraints` tox target in `tox.ini` file that
-will install a particular version of `pip-tools`. It's advised to pin the
-`pip-tools` version in the `tox` environment definition to avoid any potential
-breakages due to changes in the `pip-compile` tool itself.
+will install a particular version of `uv`. It's advised to pin the
+`uv` version in the `tox` environment definition to avoid any potential
+breakages due to changes in the `uv` tool itself.
 
 Example `tox.ini` entry:
 
@@ -26,7 +26,7 @@ basepython = {[testenv:py3]basepython}
 skip_install = True
 skipsdist = true
 deps =
-    pip-tools==7.4.1
+    uv==0.7.8
 commands = {posargs}
 allowlist_externals = *
 ```
