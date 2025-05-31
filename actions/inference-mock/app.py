@@ -36,7 +36,7 @@ def completions():
 # config
 @dataclass
 class Config:
-    strategies: list[dict]
+    matches: list[dict]
     port: int = 11434
     debug: bool = False
 
@@ -57,7 +57,7 @@ def start_server(config):
     conf = Config(**yaml_data)
 
     # set globals
-    strategies = Matcher(conf.strategies)
+    strategies = Matcher(conf.matches)
     logger = logging.getLogger(__name__)
     if conf.debug:
         logging.basicConfig(level=logging.DEBUG, format='%(message)s')
