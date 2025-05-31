@@ -1,6 +1,8 @@
 from typing import Protocol
 from abc import abstractmethod
 
+import pprint
+
 
 class Match(Protocol):
     '''
@@ -27,7 +29,7 @@ class Always:
 
     def __init__(self, response: str):
         self.response = response
-    
+
     def match(self, prompt:str) -> str|None:
         return self.response
 
@@ -46,7 +48,7 @@ class Contains:
             raise ValueError("contains must not be empty")
         self.response = response
         self.contains = contains
-    
+
     def match(self, prompt:str) -> str|None:
         for context in self.contains:
             if context not in prompt:
@@ -65,14 +67,17 @@ class Matcher:
 
     def __init__(self, matching_patterns:list[dict]):
         if not matching_patterns:
-            raise ValueError("strategies must contain at least one Match strategy")
-        
+            raise ValueError("matching strategies must contain at least one Match strategy")
+
         self.strategies: list[Match] = []
         for matching_pattern in matching_patterns:
+            response = matching_pattern.get('response')
+            if not response:
+                raise ValueError(f"matching strategy must have a response: {pprint.pformat(matching_pattern, compact=True)}")
             if 'contains' in matching_pattern:
                 pattern = Contains(**matching_pattern)
             else:
-                pattern = Always(**matching_pattern)
+                pattern = Always(response)
             self.strategies.append(pattern)
 
     

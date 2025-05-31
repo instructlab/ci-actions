@@ -1,11 +1,11 @@
-from flask import Flask, request
-from werkzeug import exceptions
+from flask import Flask, request # type: ignore[import-not-found]
+from werkzeug import exceptions # type: ignore[import-not-found]
 
 from completions.completion import create_chat_completion
 from dataclasses import dataclass
 from matching.matching import Matcher
 
-import click
+import click # type: ignore[import-not-found]
 import logging
 import pprint
 import yaml
@@ -49,11 +49,11 @@ def start_server(config):
     global strategies
 
     # get config
-    with open(config, 'r') as file:
-       yaml_data = yaml.safe_load(file)
+    with open(config, 'r', encoding="utf-8") as file:
+        yaml_data = yaml.safe_load(file)
     if not isinstance(yaml_data, dict):
         raise ValueError("config file format is invalid")
-    
+
     conf = Config(**yaml_data)
 
     # set globals
@@ -69,4 +69,4 @@ def start_server(config):
 
 
 if __name__ == '__main__':
-    conf = start_server()
+    start_server()
