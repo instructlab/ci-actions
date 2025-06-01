@@ -22,7 +22,7 @@ debug: True
 
 # port: the port the server will listen on
 # optional: this defaults to 11434
-port: 11343
+port: 11434
 
 # matches: a list of matching strategies for expected sets of prompt response pairs. The following strategies are available:
 #   - contains: accepts a list of substrings. All incoming prompts will need to contain all listed substrings for this match to be positive

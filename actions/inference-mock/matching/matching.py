@@ -1,45 +1,47 @@
-from typing import Protocol
+# Standard
 from abc import abstractmethod
-
+from typing import Protocol
 import pprint
 
 
 class Match(Protocol):
-    '''
+    """
     Match represnts a single prompt matching
     strategy. When a match is successful,
     the response is what should be returned.
-    '''
+    """
 
     response: str
 
     @abstractmethod
-    def match(self, prompt:str) -> str|None:
+    def match(self, prompt: str) -> str | None:
         raise NotImplementedError
 
 
 class Always:
-    '''
+    """
     Always is a matching strategy that always
     is a positive match on a given prompt.
 
     This is best used when only one prompt response
     is expected.
-    '''
+    """
 
     def __init__(self, response: str):
         self.response = response
 
-    def match(self, prompt:str) -> str|None:
-        return self.response
+    def match(self, prompt: str) -> str | None:
+        if prompt:
+            return self.response
+        return None
 
 
 class Contains:
-    '''
+    """
     Contains is a matching strategy that checks
     if the prompt string contains all of
     the substrings in the `contains` attribute.
-    '''
+    """
 
     contains: list[str]
 
@@ -49,7 +51,9 @@ class Contains:
         self.response = response
         self.contains = contains
 
-    def match(self, prompt:str) -> str|None:
+    def match(self, prompt: str) -> str | None:
+        if not prompt:
+            return None
         for context in self.contains:
             if context not in prompt:
                 return None
@@ -58,30 +62,32 @@ class Contains:
 
 
 class Matcher:
-    '''
-    Matcher matches prompt context and then 
+    """
+    Matcher matches prompt context and then
     selects a user provided reply.
-    '''
+    """
 
     strategies: list[Match]
 
-    def __init__(self, matching_patterns:list[dict]):
+    def __init__(self, matching_patterns: list[dict]):
         if not matching_patterns:
-            raise ValueError("matching strategies must contain at least one Match strategy")
+            raise ValueError(
+                "matching strategies must contain at least one Match strategy"
+            )
 
         self.strategies: list[Match] = []
         for matching_pattern in matching_patterns:
-            response = matching_pattern.get('response')
+            response = matching_pattern.get("response")
             if not response:
-                raise ValueError(f"matching strategy must have a response: {pprint.pformat(matching_pattern, compact=True)}")
-            if 'contains' in matching_pattern:
-                pattern = Contains(**matching_pattern)
+                raise ValueError(
+                    f"matching strategy must have a response: {pprint.pformat(matching_pattern, compact=True)}"
+                )
+            if "contains" in matching_pattern:
+                self.strategies.append(Contains(**matching_pattern))
             else:
-                pattern = Always(response)
-            self.strategies.append(pattern)
+                self.strategies.append(Always(response))
 
-    
-    def find_match(self, prompt:str) -> str:
+    def find_match(self, prompt: str) -> str:
         for strategy in self.strategies:
             response = strategy.match(prompt)
             if response:
