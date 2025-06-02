@@ -1,6 +1,8 @@
-from matching.matching import Always, Contains, Matcher, to_match
-
+# Standard
 import unittest
+
+# Third Party
+from matching.matching import Always, Contains, Matcher, to_match
 
 
 class TestAlways(unittest.TestCase):
