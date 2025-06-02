@@ -3,7 +3,7 @@
 This dashboard shows the status of our CI jobs across our four primary repositories. 
 
 💡 Note: GitHub only schedules jobs with cron for our `main` branches. The `release-*` branches' jobs do not run in a cron schedule. (see [docs](https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#schedule)).
-
+  * As a workaround, we have begun writing secondary jobs that run against `main` and execute with the contents of a release branch. To do this, we hard-code default `pr_or_branch` input values (eg. `release-v0.26`) to `workflow_dispatch`, and then the scheduled job runs against that branch's contents. ([code](https://github.com/instructlab/instructlab/pull/3435)).
 
 | Repository | Branch | Job |
 |------------|--------|-----|
