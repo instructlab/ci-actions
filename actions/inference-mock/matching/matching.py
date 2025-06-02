@@ -60,6 +60,18 @@ class Contains:
 
         return self.response
 
+# helper function pulled out for easier testing
+def to_match(pattern: dict) -> Match:
+    response = pattern.get("response")
+    if not response:
+        raise ValueError(
+            f"matching strategy must have a response: {pprint.pformat(pattern, compact=True)}"
+        )
+    if "contains" in pattern:
+        return Contains(**pattern)
+    else:
+        return Always(**pattern)
+
 
 class Matcher:
     """
@@ -77,15 +89,7 @@ class Matcher:
 
         self.strategies: list[Match] = []
         for matching_pattern in matching_patterns:
-            response = matching_pattern.get("response")
-            if not response:
-                raise ValueError(
-                    f"matching strategy must have a response: {pprint.pformat(matching_pattern, compact=True)}"
-                )
-            if "contains" in matching_pattern:
-                self.strategies.append(Contains(**matching_pattern))
-            else:
-                self.strategies.append(Always(response))
+            self.strategies.append(to_match(matching_pattern))
 
     def find_match(self, prompt: str) -> str:
         for strategy in self.strategies:

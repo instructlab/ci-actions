@@ -47,16 +47,10 @@ class Config:
 
 
 @click.command()
-@click.option(
-    "--config",
-    type=click.Path(),
-    required=True,
-    help="path to a YAML config file containing detailed configuration and model response options",
-)
+@click.option("-c", "--config", "config", type=click.File(mode="r", encoding="utf-8"), required=True, help="yaml config file")
 def start_server(config):
     # get config
-    with open(config, "r", encoding="utf-8") as file:
-        yaml_data = yaml.safe_load(file)
+    yaml_data = yaml.safe_load(config)
     if not isinstance(yaml_data, dict):
         raise ValueError("config file format is invalid")
 

@@ -6,6 +6,7 @@
 import random
 
 
+# TODO: use a library to return and validate completions so this doesn't need to be maintained
 def create_chat_completion(content: str, model: str = "gpt-3.5") -> dict:
     response = {
         "id": "chatcmpl-2nYZXNHxx1PeK1u8xXcE1Fqr1U6Ve",
