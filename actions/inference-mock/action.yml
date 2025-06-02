@@ -17,5 +17,5 @@ runs:
     - name: Run Inference Mock Server
       shell: bash
       run: |
-        nohup python ${{ github.action_path }}/app.py --config ${{ inputs.config }}
-        sleep 1
+        nohup python ${{ github.action_path }}/app.py --config ${{ inputs.config }} &
+        sleep 2
