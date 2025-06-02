@@ -3,7 +3,7 @@
 ## Overview
 
 Inference Mock is a tool that creates a flask server that runs as a background process. OpenAI comptabile calls can be made to its completions API.
-Based on how the server is configured, it will send a set of programmed resposnes back.
+Based on how the server is configured, it will send a set of programmed responses back.
 
 ## When to Use it?
 
@@ -29,7 +29,7 @@ port: 11434
 #   - response: passing only a response is an `Always` match strategy. If no other strategy has matched yet, this will always be a positive match.
 #
 # note: the strategies are executed in the order listed, and the first succesful match is accepted. If you start with an `Always` strategy, its 
-# response will be the only resposne returned.
+# response will be the only response returned.
 matches:
 
     # this is an example of a `contains` strategy. If the prompt contains the substrings, it returns the response.

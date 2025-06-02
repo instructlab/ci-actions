@@ -6,7 +6,7 @@ import pprint
 
 class Match(Protocol):
     """
-    Match represnts a single prompt matching
+    Match represents a single prompt matching
     strategy. When a match is successful,
     the response is what should be returned.
     """
@@ -69,8 +69,7 @@ def to_match(pattern: dict) -> Match:
         )
     if "contains" in pattern:
         return Contains(**pattern)
-    else:
-        return Always(**pattern)
+    return Always(**pattern)
 
 
 class Matcher:

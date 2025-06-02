@@ -23,12 +23,15 @@ def completions():
     if not data or "prompt" not in data:
         raise exceptions.BadRequest("prompt is empty or None")
 
-    prompt_debug_str = data["prompt"][:90] + "..."
+    prompt = data.get('prompt')
+    prompt_debug_str = prompt
+    if len(prompt) > 90:
+        prompt_debug_str = data["prompt"][:90] + "..."
+
     app.logger.debug(
         f"{request.method} {request.url} {data['model']} {prompt_debug_str}"
     )
 
-    prompt = data.get("prompt")
     chat_response = strategies.find_match(
         prompt
     )  # handle prompt and generate correct response
@@ -52,7 +55,7 @@ def start_server(config):
     # get config
     yaml_data = yaml.safe_load(config)
     if not isinstance(yaml_data, dict):
-        raise ValueError("config file format is invalid")
+        raise ValueError(f"config file {config} must be a set of key-value pairs")
 
     conf = Config(**yaml_data)
 
@@ -72,4 +75,4 @@ def start_server(config):
 
 
 if __name__ == "__main__":
-    start_server()  # pylint: disable=no-value-for-parameter
+    start_server() # pylint: disable=no-value-for-parameter
