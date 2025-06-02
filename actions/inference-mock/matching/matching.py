@@ -60,6 +60,7 @@ class Contains:
 
         return self.response
 
+
 # helper function pulled out for easier testing
 def to_match(pattern: dict) -> Match:
     response = pattern.get("response")

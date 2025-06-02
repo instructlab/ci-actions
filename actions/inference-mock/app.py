@@ -23,7 +23,7 @@ def completions():
     if not data or "prompt" not in data:
         raise exceptions.BadRequest("prompt is empty or None")
 
-    prompt = data.get('prompt')
+    prompt = data.get("prompt")
     prompt_debug_str = prompt
     if len(prompt) > 90:
         prompt_debug_str = data["prompt"][:90] + "..."
@@ -50,7 +50,14 @@ class Config:
 
 
 @click.command()
-@click.option("-c", "--config", "config", type=click.File(mode="r", encoding="utf-8"), required=True, help="yaml config file")
+@click.option(
+    "-c",
+    "--config",
+    "config",
+    type=click.File(mode="r", encoding="utf-8"),
+    required=True,
+    help="yaml config file",
+)
 def start_server(config):
     # get config
     yaml_data = yaml.safe_load(config)
@@ -75,4 +82,4 @@ def start_server(config):
 
 
 if __name__ == "__main__":
-    start_server() # pylint: disable=no-value-for-parameter
+    start_server()  # pylint: disable=no-value-for-parameter
