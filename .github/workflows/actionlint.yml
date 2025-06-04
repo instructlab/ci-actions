@@ -7,7 +7,6 @@ on:
       - "main"
       - "release-**"
     paths:
-      - 'actions/**/*.ya?ml' # Any in-house action
       - '.github/workflows/*.ya?ml'
       - '.github/workflows/actionlint.*' # This workflow
   pull_request:
@@ -15,7 +14,6 @@ on:
       - "main"
       - "release-**"
     paths:
-      - 'actions/**/*.ya?ml' # Any in-house action
       - '.github/workflows/*.ya?ml'
       - '.github/workflows/actionlint.*' # This workflow
 
