@@ -9,11 +9,9 @@ This dashboard shows the status of our CI jobs across our four primary repositor
 |------------|--------|-----|
 | Core | `main` | [![E2E (NVIDIA L4 x1)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l4-x1.yml/badge.svg?branch=main)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l4-x1.yml) |
 | | | [![E2E (NVIDIA L40S x4)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x4.yml/badge.svg?branch=main)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x4.yml) |
-| | | [![E2E (NVIDIA L40S x8)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x8.yml/badge.svg?branch=main)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x8.yml) |
 | | | [![E2E (NVIDIA Tesla T4 x1)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-t4-x1.yml/badge.svg?branch=main)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-t4-x1.yml) |
 | | `release-v0.26` | [![E2E (NVIDIA L4 x1)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l4-x1.yml/badge.svg?branch=release-v0.26)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l4-x1.yml) |
 | | | [![E2E (NVIDIA L40S x4)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x4.yml/badge.svg?branch=release-v0.26)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x4.yml) |
-| | | [![E2E (NVIDIA L40S x8)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x8.yml/badge.svg?branch=release-v0.26)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-l40s-x8.yml) |
 | | | [![E2E (NVIDIA Tesla T4 x1)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-t4-x1.yml/badge.svg?branch=release-v0.26)](https://github.com/instructlab/instructlab/actions/workflows/e2e-nvidia-t4-x1.yml) |
 
 | Repository | Branch | Job |
