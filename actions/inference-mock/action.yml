@@ -1,0 +1,21 @@
+name: 'Inference Mock'
+description: 'Creates and runs a server that returns mock Open AI completions as a background process'
+author: "InstructLab"
+
+inputs:
+  config:
+    description: the path to a config.yml file for the inference mock server
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Dependencies
+      shell: bash
+      run: pip install -r ${{ github.action_path }}/requirements.txt
+    - name: Run Inference Mock Server
+      shell: bash
+      run: |
+        nohup python ${{ github.action_path }}/app.py --config ${{ inputs.config }} &
+        sleep 2

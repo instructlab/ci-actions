@@ -1,0 +1,35 @@
+name: Inference Mock Tests
+
+on:
+  pull_request:
+    branches:
+      - "main"
+      - "release-**"
+    paths:
+      - 'actions/inference-mock/**'
+      - '.github/workflows/inference-mock.yml' # This workflow
+
+jobs:
+  inference-mock-unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        python-version: ["3.11"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            actions/inference-mock
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: actions/inference-mock
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Unit Tests
+        working-directory: actions/inference-mock
+        run: |
+          python -m unittest test/test.py
