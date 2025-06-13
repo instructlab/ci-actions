@@ -1,18 +1,16 @@
-# Standard
-import unittest
-
 # Third Party
 from matching.matching import Always, Contains, Matcher, to_match
+import pytest
 
 
-class TestAlways(unittest.TestCase):
+class TestAlways:
     # match on any prompt
     def test_always(self):
         expect_response = "expected response"
         prompt = "example prompt"
         always = Always(expect_response)
         actual_response = always.match(prompt)
-        self.assertEqual(actual_response, expect_response)
+        assert actual_response == expect_response
 
     # reject empty prompts
     def test_always_empty_prompt(self):
@@ -20,17 +18,17 @@ class TestAlways(unittest.TestCase):
         prompt = ""
         always = Always(response)
         actual_response = always.match(prompt)
-        self.assertIsNone(actual_response)
+        assert actual_response is None
 
 
-class TestContains(unittest.TestCase):
+class TestContains:
     def test_contains(self):
         expect_response = "expected response"
         prompt = "example prompt"
         match_on = ["example"]
         contains = Contains(match_on, expect_response)
         actual_response = contains.match(prompt)
-        self.assertEqual(actual_response, expect_response)
+        assert actual_response == expect_response
 
     def test_contains_many(self):
         expect_response = "expected response"
@@ -38,7 +36,7 @@ class TestContains(unittest.TestCase):
         match_on = ["example", "many substring elements", "match on"]
         contains = Contains(match_on, expect_response)
         actual_response = contains.match(prompt)
-        self.assertEqual(actual_response, expect_response)
+        assert actual_response == expect_response
 
     # if any substrings don't match, return None
     def test_contains_mismatch(self):
@@ -47,7 +45,7 @@ class TestContains(unittest.TestCase):
         match_on = ["example", "many substring elements", "match on", "banana"]
         contains = Contains(match_on, response)
         actual_response = contains.match(prompt)
-        self.assertIsNone(actual_response)
+        assert actual_response is None
 
     # reject empty prompts
     def test_contains_empty(self):
@@ -56,29 +54,30 @@ class TestContains(unittest.TestCase):
         match_on = ["example"]
         contains = Contains(match_on, response)
         actual_response = contains.match(prompt)
-        self.assertIsNone(actual_response)
+        assert actual_response is None
 
 
-class TestMatcher(unittest.TestCase):
+class TestMatcher:
     def test_to_contains(self):
         response = "I am a response"
         substr = ["a", "b", "c"]
         pattern = {"contains": substr, "response": response}
         contains = to_match(pattern)
-        self.assertIsInstance(contains, Contains)
-        self.assertEqual(contains.response, response)
+        assert isinstance(contains, Contains)
+        assert contains.response == response
 
     def test_to_always(self):
         response = "I am a response"
         always_pattern = {"response": response}
         always = to_match(always_pattern)
-        self.assertIsInstance(always, Always)
-        self.assertEqual(always.response, response)
+        assert isinstance(always, Always)
+        assert always.response == response
 
     def test_to_invalid(self):
         response = "I am a response"
         invalid_pattern = {"banana": "foo", "response": response}
-        self.assertRaises(Exception, to_match, invalid_pattern)
+        with pytest.raises(TypeError):
+            to_match(invalid_pattern)
 
     def test_find_match_contains(self):
         expect_response = "I am a response"
@@ -88,7 +87,7 @@ class TestMatcher(unittest.TestCase):
 
         prompt = "example prompt"
         actual_response = matcher.find_match(prompt)
-        self.assertEqual(actual_response, expect_response)
+        assert actual_response == expect_response
 
     def test_find_match_always(self):
         expect_response = "I am a response"
@@ -97,7 +96,7 @@ class TestMatcher(unittest.TestCase):
 
         prompt = "example prompt"
         actual_response = matcher.find_match(prompt)
-        self.assertEqual(actual_response, expect_response)
+        assert actual_response == expect_response
 
     # test that order is preserved and responses fall back until a match or end of strategies
     def test_find_match_fallback(self):
@@ -110,10 +109,6 @@ class TestMatcher(unittest.TestCase):
         ]
         matcher = Matcher(patterns)
         always_response = matcher.find_match(prompt="example prompt")
-        self.assertEqual(always_response, "this is the fallback response")
+        assert always_response == "this is the fallback response"
         contains_response = matcher.find_match(prompt="this is the fallback response")
-        self.assertEqual(contains_response, "a response you will not get")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert contains_response == "a response you will not get"

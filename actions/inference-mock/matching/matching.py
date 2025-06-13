@@ -1,10 +1,9 @@
 # Standard
-from abc import abstractmethod
-from typing import Protocol
+from abc import ABC, abstractmethod
 import pprint
 
 
-class Match(Protocol):
+class Match(ABC):
     """
     Match represents a single prompt matching
     strategy. When a match is successful,
@@ -15,10 +14,10 @@ class Match(Protocol):
 
     @abstractmethod
     def match(self, prompt: str) -> str | None:
-        raise NotImplementedError
+        pass
 
 
-class Always:
+class Always(Match):
     """
     Always is a matching strategy that always
     is a positive match on a given prompt.
@@ -36,7 +35,7 @@ class Always:
         return None
 
 
-class Contains:
+class Contains(Match):
     """
     Contains is a matching strategy that checks
     if the prompt string contains all of

@@ -1,15 +1,14 @@
 # Standard
-from dataclasses import dataclass
 import logging
 import pprint
 
 # Third Party
 from completions.completion import create_chat_completion
+from config import Config
 from flask import Flask, request  # type: ignore[import-not-found]
 from matching.matching import Matcher
 from werkzeug import exceptions  # type: ignore[import-not-found]
 import click  # type: ignore[import-not-found]
-import yaml
 
 # Globals
 app = Flask(__name__)
@@ -41,33 +40,9 @@ def completions():
     return response
 
 
-# config
-@dataclass
-class Config:
-    matches: list[dict]
-    port: int = 11434
-    debug: bool = False
-
-
-@click.command()
-@click.option(
-    "-c",
-    "--config",
-    "config",
-    type=click.File(mode="r", encoding="utf-8"),
-    required=True,
-    help="yaml config file",
-)
-def start_server(config):
-    # get config
-    yaml_data = yaml.safe_load(config)
-    if not isinstance(yaml_data, dict):
-        raise ValueError(f"config file {config} must be a set of key-value pairs")
-
-    conf = Config(**yaml_data)
-
+def start_server(config: Config):
     # configure logger
-    if conf.debug:
+    if config.debug:
         app.logger.setLevel(logging.DEBUG)
         app.logger.debug("debug mode enabled")
     else:
@@ -75,11 +50,25 @@ def start_server(config):
 
     # create match strategy object
     global strategies  # pylint: disable=global-statement
-    strategies = Matcher(conf.matches)
+    strategies = Matcher(config.matches)
 
     # init server
-    app.run(debug=conf.debug, port=conf.port)
+    app.run(debug=config.debug, port=config.port)
+
+
+@click.command()
+@click.option(
+    "-c",
+    "--config",
+    "config_file",
+    type=click.File(mode="r", encoding="utf-8"),
+    required=True,
+    help="yaml config file",
+)
+def start_server_cli(config_file):
+    config = Config.from_file(config_file)
+    start_server(config)
 
 
 if __name__ == "__main__":
-    start_server()  # pylint: disable=no-value-for-parameter
+    start_server_cli()  # pylint: disable=no-value-for-parameter
