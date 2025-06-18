@@ -7,13 +7,12 @@ if [ "$(uname)" != "Linux" ]; then
     exit 1
 fi
 
-# If we run from tox, ignore the index url
-unset PIP_EXTRA_INDEX_URL
-
 # Read list of requirements files from the config file
 REQUIREMENTS_FILES=$(grep -v '^#' requirements-files.in | tr '\n' ' ')
 
 CONSTRAINTS_FILE=constraints-dev.txt
+
+export UV_INDEX_STRATEGY=unsafe-best-match
 
 # shellcheck disable=SC2086
 uv pip compile -U \
