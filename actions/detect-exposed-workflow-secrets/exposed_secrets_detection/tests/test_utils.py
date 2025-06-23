@@ -116,7 +116,7 @@ def test_workflow_auto_triggers_on_pull_request_one_automatic_trigger_exists():
     trigger_conditions = [
         "schedule",
         "workflow_dispatch",
-        "pull_request",
+        "pull_request_target",
     ]
     workflow_contains_auto_triggers = workflow_auto_triggers_on_pull_request(
         trigger_conditions
