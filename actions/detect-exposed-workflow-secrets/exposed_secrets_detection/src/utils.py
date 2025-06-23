@@ -91,7 +91,6 @@ def workflow_auto_triggers_on_pull_request(trigger_conditions: list) -> bool:
     # request/issue actions.
     automatic_triggers = {
         "issue_comment",  # this can sometimes require a GitHub token stored in an env var
-        "pull_request",
         "pull_request_comment",  # this is deprecated and replaced by "issue_comment", but GitHub still allows it to be used
         "pull_request_review",
         "pull_request_review_comment",
